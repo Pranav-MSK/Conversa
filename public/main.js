@@ -158,7 +158,7 @@ onSnapshot(q, (snapshot) => {
 
         const isMine = sender === currentUsername;
         const rowClass = isMine ? "message-row outgoing" : "message-row incoming";
-        const avatarImg = `<img src="https://i.pravatar.cc/40?u=${sender}" alt="${sender}" />`;
+        const avatarImg = `<img src="/assets/userProfile.png" alt="${sender}" />`;
 
         // Optional buttons if it's the user's own message
         let buttons = "";
@@ -225,7 +225,7 @@ sendBtn.addEventListener('click', () => {
 
     msgRow.innerHTML = `
       <div class="message">${text}</div>
-      <img src="/.userProfile.png" alt="Me" />
+      <img src="/assets/userProfile.png" alt="Me" />
     `;
 
     messages.appendChild(msgRow);
