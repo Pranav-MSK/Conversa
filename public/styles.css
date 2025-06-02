@@ -1,54 +1,71 @@
-body { font-family: Arial, sans-serif; padding: 20px; }
-
-body.dark-mode {
-    background-color: #121212;
-    color: #ffffff;
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-body.dark-mode input, body.dark-mode button {
-    background-color: #333;
-    color: white;
-    border: 1px solid #555;
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode input,
+body.dark-mode button {
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
 }
 
 body.dark-mode #chat-box {
-    background-color: #1e1e1e;
+  background-color: #1e1e1e;
 }
 
 #chat-box {
-    border: 1px solid #ccc;
-    height: 300px;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: #fafafa;
+  border: 1px solid #ccc;
+  height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #fafafa;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 #chat-controls {
-    position: sticky;
-    bottom: 0;
-    background: #fff;
-    padding-top: 10px;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 10px;
 }
 
-input, button {
-    padding: 10px;
-    margin-top: 5px;
+input,
+button {
+  padding: 10px;
+  margin-top: 5px;
 }
 
 .message {
-    padding: 5px 10px;
-    margin-bottom: 5px;
-    border-radius: 6px;
-    max-width: 90%;
-    word-wrap: break-word;
+  padding: 8px 14px;
+  margin-bottom: 5px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
+  line-height: 1.4;
+  display: inline-block;
+  clear: both;
 }
 
 .own {
-    background-color: #d1ffd6;
-    align-self: flex-end;
+  background-color: #dcf8c6;
+  color: #000;
+  align-self: flex-end;
+  text-align: right;
 }
 
 .other {
-    background-color: #f0f0f0;
+  background-color: #f1f0f0;
+  color: #000;
+  align-self: flex-start;
+  text-align: left;
 }
