@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Real-Time Chat App</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: auto; margin-bottom: 10px; padding: 10px; }
+    input, button { padding: 10px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h2>Real-Time Chat</h2>
+
+  <div id="chat-box"></div>
+
+  <input type="text" id="username" placeholder="Enter your name"><br>
+  <input type="text" id="message" placeholder="Type your message">
+  <button onclick="sendMessage()">Send</button>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    // Your Firebase configuration (replace with your actual config)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcU-gzeWLdoAtu4jSmH_F8No74c6ncnvY",
+      authDomain: "realtime-chat-app-c1e8f.firebaseapp.com",
+      projectId: "realtime-chat-app-c1e8f",
+      storageBucket: "realtime-chat-app-c1e8f.firebasestorage.app",
+      messagingSenderId: "51484796172",
+      appId: "1:51484796172:web:3b1d7fdeb7d0bb5fe89529"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const chatBox = document.getElementById('chat-box');
+
+    // Send message to Firestore
+    window.sendMessage = async function () {
+      const username = document.getElementById('username').value || "Anonymous";
+      const text = document.getElementById('message').value;
+
+      if (text.trim() === "") return;
+
+      await addDoc(collection(db, "messages"), {
+        sender: username,
+        text: text,
+        timestamp: serverTimestamp()
+      });
+
+      document.getElementById('message').value = "";
+    };
+
+    // Listen for new messages
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, (snapshot) => {
+      chatBox.innerHTML = "";
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const time = msg.timestamp?.toDate().toLocaleTimeString() || "";
+        chatBox.innerHTML += `<p><strong>${msg.sender}</strong> [${time}]: ${msg.text}</p>`;
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  </script>
+</body>
+</html>
