@@ -5,26 +5,89 @@
   <title>Real-Time Chat App</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    #chat-box { border: 1px solid #ccc; height: 300px; overflow-y: auto; margin-bottom: 10px; padding: 10px; }
-    input, button { padding: 10px; margin-top: 5px; }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    body.dark-mode input, body.dark-mode button {
+      background-color: #333;
+      color: white;
+      border: 1px solid #555;
+    }
+
+    body.dark-mode #chat-box {
+      background-color: #1e1e1e;
+    }
+
+    #chat-box {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #fafafa;
+    }
+
+    #chat-controls {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding-top: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin-top: 5px;
+    }
+
+    .message {
+      padding: 5px 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+      max-width: 90%;
+      word-wrap: break-word;
+    }
+
+    .own {
+      background-color: #d1ffd6;
+      align-self: flex-end;
+    }
+
+    .other {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
 <body>
   <h2>Real-Time Chat</h2>
 
+  <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
   <div id="chat-box"></div>
 
-  <input type="text" id="username" placeholder="Enter your name"><br>
-  <input type="text" id="message" placeholder="Type your message">
-  <button onclick="sendMessage()">Send</button>
+  <div id="chat-controls">
+    <input type="text" id="username" placeholder="Enter your name"><br>
+    <input type="text" id="message" placeholder="Type your message">
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
   <!-- Firebase SDK -->
   <script type="module">
-    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      serverTimestamp,
+      limit
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-    // Your Firebase configuration (replace with your actual config)
+
     const firebaseConfig = {
       apiKey: "AIzaSyBcU-gzeWLdoAtu4jSmH_F8No74c6ncnvY",
       authDomain: "realtime-chat-app-c1e8f.firebaseapp.com",
@@ -34,18 +97,23 @@
       appId: "1:51484796172:web:3b1d7fdeb7d0bb5fe89529"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     const chatBox = document.getElementById('chat-box');
+    const messageInput = document.getElementById('message');
+    const usernameInput = document.getElementById('username');
 
-    // Send message to Firestore
+    const escapeHTML = (str) =>
+      str.replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;");
+
     window.sendMessage = async function () {
-      const username = document.getElementById('username').value || "Anonymous";
-      const text = document.getElementById('message').value;
+      const username = usernameInput.value.trim() || "Anonymous";
+      const text = messageInput.value.trim();
 
-      if (text.trim() === "") return;
+      if (text.length === 0 || text.length > 500) return;
 
       await addDoc(collection(db, "messages"), {
         sender: username,
@@ -53,20 +121,71 @@
         timestamp: serverTimestamp()
       });
 
-      document.getElementById('message').value = "";
+      messageInput.value = "";
     };
 
-    // Listen for new messages
-    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    //"Enter" to send message
+    messageInput.addEventListener("keyup", function (e) {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    //Dark Mode script
+    window.toggleDarkMode = function () {
+      document.body.classList.toggle("dark-mode");
+    };
+
+    const q = query(collection(db, "messages"), orderBy("timestamp"), limit(100));
+
     onSnapshot(q, (snapshot) => {
       chatBox.innerHTML = "";
+      const currentUsername = usernameInput.value.trim() || "Anonymous";
+
       snapshot.forEach(doc => {
         const msg = doc.data();
-        const time = msg.timestamp?.toDate().toLocaleTimeString() || "";
-        chatBox.innerHTML += `<p><strong>${msg.sender}</strong> [${time}]: ${msg.text}</p>`;
+        const msgId = doc.id; // <-- add this line to get document ID
+        const safeText = escapeHTML(msg.text);
+        const sender = escapeHTML(msg.sender);
+        const time = msg.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "";
+
+        const isMine = sender === currentUsername;
+        const msgClass = isMine ? "own" : "other";
+
+        // Add buttons only if message belongs to current user
+        let buttons = "";
+        if (isMine) {
+          buttons = `
+            <button onclick="deleteMessage('${msgId}')">🗑️</button>
+            <button onclick="editMessage('${msgId}', '${safeText.replace(/'/g, "\\'")}')">✏️</button>
+          `;
+        }
+
+        const msgDiv = `<div class="message ${msgClass}">
+          <strong>${sender}</strong> [${time}]: ${safeText} ${buttons}
+        </div>`;
+
+        chatBox.innerHTML += msgDiv;
       });
+
+
       chatBox.scrollTop = chatBox.scrollHeight;
     });
+
+    import { doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    window.deleteMessage = async function(id) {
+      await deleteDoc(doc(db, "messages", id));
+    };
+
+    window.editMessage = function(id, oldText) {
+      const newText = prompt("Edit your message:", oldText);
+      if (newText && newText.trim()) {
+        updateDoc(doc(db, "messages", id), {
+          text: newText.trim(),
+          timestamp: serverTimestamp()
+        });
+      }
+    };
+
   </script>
 </body>
 </html>
