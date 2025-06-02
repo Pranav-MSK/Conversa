@@ -158,7 +158,7 @@ onSnapshot(q, (snapshot) => {
 
         const isMine = sender === currentUsername;
         const rowClass = isMine ? "message-row outgoing" : "message-row incoming";
-        const avatarImg = `<img src="/assets/userProfile.png" alt="${sender}" />`;
+        const avatarImg = `<img src="./userProfile.png" alt="${sender}" />`;
 
         // Optional buttons if it's the user's own message
         let buttons = "";
@@ -212,25 +212,3 @@ window.editMessage = function(id, oldText) {
     });
     }
 };
-
-const sendBtn = document.getElementById('sendBtn');
-const input = document.querySelector('.message-input input');
-const messages = document.querySelector('.messages');
-
-sendBtn.addEventListener('click', () => {
-  const text = input.value.trim();
-  if (text) {
-    const msgRow = document.createElement('div');
-    msgRow.className = 'message-row outgoing';
-
-    msgRow.innerHTML = `
-      <div class="message">${text}</div>
-      <img src="/assets/userProfile.png" alt="Me" />
-    `;
-
-    messages.appendChild(msgRow);
-    input.value = '';
-    messages.scrollTop = messages.scrollHeight;
-  }
-});
-
