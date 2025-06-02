@@ -22,7 +22,36 @@ body.dark-mode #chat-box {
     margin-bottom: 10px;
     padding: 10px;
     background-color: #fafafa;
+    display: flex;
+    flex-direction: column;
 }
+
+.message {
+  padding: 8px 14px;
+  margin-bottom: 5px;
+  border-radius: 20px;
+  max-width: 90%;
+  word-wrap: break-word;
+  display: inline-block;
+  clear: both;
+}
+
+.own {
+  background-color: #91f39d;
+  align-self: flex-end;
+  color:#000;
+  text-align: right;
+  margin-left:auto;
+}
+
+.other {
+  background-color: #f0f0f0;
+  align-self: flex-start;
+  text-align: left;
+  border: 1px solid #ddd;
+  margin-right: auto;
+}
+
 
 #chat-controls {
     position: sticky;
@@ -34,21 +63,4 @@ body.dark-mode #chat-box {
 input, button {
     padding: 10px;
     margin-top: 5px;
-}
-
-.message {
-    padding: 5px 10px;
-    margin-bottom: 5px;
-    border-radius: 6px;
-    max-width: 90%;
-    word-wrap: break-word;
-}
-
-.own {
-    background-color: #d1ffd6;
-    align-self: flex-end;
-}
-
-.other {
-    background-color: #f0f0f0;
 }
