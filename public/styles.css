@@ -103,12 +103,12 @@ body.dark-mode #chat-box {
 }
 
 .incoming .message {
-  background: #e0e6ed;
+  background-color: #e0e6ed;
   color: black;
 }
 
 .outgoing .message {
-  background: #92fc89;
+  background-color: #3795e7;
   color: black;
 }
 

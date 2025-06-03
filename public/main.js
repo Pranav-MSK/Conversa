@@ -64,6 +64,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     document.getElementById("auth-section").style.display = "none";
+    await loadMessages();
   } else {
     document.getElementById("auth-section").style.display = "block";
   }
@@ -106,14 +107,17 @@ window.sendMessage = async function () {
   }
   if (text.length === 0 || text.length > 500) return;
 
-  await addDoc(collection(db, "messages"), {
+  const message = {
     sender: userNickname,
     text: text,
-    timestamp: serverTimestamp()
-  });
+    timestamp: new Date().toISOString()
+  };
+
+  await MessageStorage.addMessage(message);
   messageInput.value = "";
-  chatBox.scrollTop = chatBox.scrollHeight;
+  loadMessages(); // 👈 call a new function to render messages
 };
+
 
 messageInput.addEventListener("keyup", function (e) {
   if (e.key === "Enter") sendMessage();
@@ -125,7 +129,7 @@ window.toggleDarkMode = function () {
 
 const q = query(collection(db, "messages"), orderBy("timestamp"), limit(100));
 
-onSnapshot(q, (snapshot) => {
+/*onSnapshot(q, (snapshot) => {
   const currentUsername = userNickname || "Anonymous";
   chatBox.innerHTML = "";
 
@@ -138,7 +142,7 @@ onSnapshot(q, (snapshot) => {
 
     const isMine = sender === currentUsername;
     const rowClass = isMine ? "message-row outgoing" : "message-row incoming";
-    const avatarImg = `<img src="/assets/userProfile.png" alt="${sender}" />`;
+    const avatarImg = `<img src="./assets/userProfile.png" alt="${sender}" />`;
 
     let icons = "";
     if (isMine) {
@@ -174,12 +178,71 @@ onSnapshot(q, (snapshot) => {
   });
 
   chatBox.scrollTop = chatBox.scrollHeight;
+});*/
+
+async function loadMessages() {
+  const messages = await MessageStorage.getMessages();
+  const currentUsername = userNickname || "Anonymous";
+  chatBox.innerHTML = "";
+
+  messages.forEach((msg, index) => {
+    const safeText = escapeHTML(msg.text);
+    const sender = escapeHTML(msg.sender);
+    const time = msg.timestamp? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }): "";
+
+    const isMine = sender === currentUsername;
+    const rowClass = isMine ? "message-row outgoing" : "message-row incoming";
+    const avatarImg = `<img src="./assets/userProfile.png" alt="${sender}" />`;
+
+    let icons = "";
+    if (isMine) {
+      icons = `
+        <div class="msg-icons">
+          <button onclick="deleteMessage(${index})">🗑️</button>
+        </div>
+      `;
+    }
+
+    const msgRow = document.createElement("div");
+    msgRow.className = rowClass;
+    msgRow.innerHTML = isMine
+      ? `
+        <div class="msg-bubble own">
+          ${icons}
+          <div class="msg-text">${safeText}</div>
+          <div class="timestamp">${time}</div>
+        </div>
+        ${avatarImg}
+      `
+      : `
+        ${avatarImg}
+        <div class="msg-bubble other">
+          <div class="msg-text"><strong>${sender}</strong><br>${safeText}</div>
+          <div class="timestamp">${time}</div>
+        </div>
+      `;
+
+    chatBox.appendChild(msgRow);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  // existing code...
+  if (user) {
+    // after setting nickname...
+    await loadMessages(); // <-- add this
+  }
 });
 
 
-window.deleteMessage = async function(id) {
-  await deleteDoc(doc(db, "messages", id));
+
+window.deleteMessage = async function (index) {
+  await MessageStorage.deleteMessage(index);
+  loadMessages();
 };
+
 
 window.editMessage = function(id, oldText) {
   const newText = prompt("Edit your message:", oldText);
@@ -188,5 +251,82 @@ window.editMessage = function(id, oldText) {
       text: newText.trim(),
       timestamp: serverTimestamp()
     });
+  }
+};
+
+//Logout Button Functionality
+document.getElementById("logout-btn").addEventListener("click", () => {
+  localStorage.removeItem("currentUser");
+  window.location.href = "auth.html";
+});
+
+//LogIn Page redirecter
+window.addEventListener("DOMContentLoaded", () => {
+  const user = localStorage.getItem("currentUser");
+  if (!user) {
+    window.location.href = "auth.html";
+  }
+});
+
+
+
+
+
+
+//Firebase Database switch - Dont Touch 
+// Toggle this to switch between localStorage and Firebase
+const useFirebase = false; //Change to true before final deployment
+
+// Message Storage Abstraction
+const MessageStorage = {
+  async getMessages(chatId = "default") {
+    if (useFirebase) {
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      const snapshot = await getDocs(messagesRef);
+      return snapshot.docs.map(doc => doc.data());
+    } else {
+      const raw = localStorage.getItem(`messages-${chatId}`);
+      return JSON.parse(raw || "[]");
+    }
+  },
+
+  async saveMessages(messages, chatId = "default") {
+    if (useFirebase) {
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      for (const msg of messages) {
+        await addDoc(messagesRef, msg);
+      }
+    } else {
+      localStorage.setItem(`messages-${chatId}`, JSON.stringify(messages));
+    }
+  },
+
+  async addMessage(message, chatId = "default") {
+    if (useFirebase) {
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      await addDoc(messagesRef, message);
+    } else {
+      const messages = await this.getMessages(chatId);
+      messages.push(message);
+      localStorage.setItem(`messages-${chatId}`, JSON.stringify(messages));
+    }
+  },
+
+  async deleteMessage(index, chatId = "default") {
+    if (useFirebase) {
+      // Placeholder – in real Firebase you'd delete by ID
+    } else {
+      const messages = await this.getMessages(chatId);
+      messages.splice(index, 1);
+      localStorage.setItem(`messages-${chatId}`, JSON.stringify(messages));
+    }
+  },
+
+  async clearMessages(chatId = "default") {
+    if (useFirebase) {
+      // Not recommended unless admin control
+    } else {
+      localStorage.removeItem(`messages-${chatId}`);
+    }
   }
 };
