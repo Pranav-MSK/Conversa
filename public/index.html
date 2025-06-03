@@ -8,26 +8,28 @@
 <body>
   <h2 style="text-align:center"><b>CONVERSA</b></h2>
 
-  <div id="auth-section">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <input type="text" id="nickname" placeholder="Choose Nickname (for new users)">
-    <button onclick="signUp()">Sign Up</button>
-    <button onclick="signIn()">Sign In</button>
-    <p id="auth-error" style="color:red;"></p><br>
-    <button onclick="signOutUser()">Sign Out</button>
+  <div class="chat-container">
+    <div id="chat-header">
+      <div id="auth-section">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <input type="text" id="nickname" placeholder="Choose Nickname (for new users)">
+        <button onclick="signUp()">Sign Up</button>
+        <button onclick="signIn()">Sign In</button>
+        <p id="auth-error" style="color:red;"></p>
+        <button onclick="signOutUser()">Sign Out</button>
+      </div>
+      <button onclick="toggleDarkMode()" id="dark-toggle">🌓</button>
+    </div>
+
+    <div id="chat-box" class="messages"></div>
+
+    <div id="chat-controls" class="message-input">
+      <input type="text" id="message" placeholder="Type your message">
+      <button onclick="sendMessage()" id="sendBtn">Send</button>
+    </div>
   </div>
 
-  <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-
-  <div class="messages" id="chat-box"></div>
-
-  <div id="chat-controls">
-    <input type="text" id="message" placeholder="Type your message">
-    <button onclick="sendMessage()">Send</button>
-  </div>
-
-  <!-- Firebase SDK -->
   <script type="module" src="./main.js"></script>
 </body>
 </html>
