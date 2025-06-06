@@ -2,32 +2,42 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Conversa - Chat App</title>
+  <title>Conversa – Chat App</title>
   <link rel="stylesheet" href="./styles.css">
+  <!-- Firebase SDKs (modular) -->
+  <script type="module"
+    src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script type="module"
+    src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+  <script type="module"
+    src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
 </head>
+
 <body>
   <h2 style="text-align:center"><b>CONVERSA</b></h2>
 
   <div class="chat-container">
-    <div id="chat-header">
-      <div id="auth-section">
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Password">
-        <input type="text" id="nickname" placeholder="Choose Nickname (for new users)">
-        <button onclick="signUp()">Sign Up</button>
-        <button onclick="signIn()">Sign In</button>
-        <p id="auth-error" style="color:red;"></p>
-        <button onclick="signOutUser()">Sign Out</button>
-        <button id="logout-btn">Logout</button>
-      </div>
-      <button onclick="toggleDarkMode()" id="dark-toggle">🌓</button>
+    <!-- Auth section -->
+    <div id="auth-section">
+      <input type="email"    id="email"    placeholder="Email">
+      <input type="password" id="password" placeholder="Password">
+      <input type="text"     id="nickname" placeholder="Choose Nickname (new users)">
+      <button onclick="signUp()">Sign Up</button>
+      <button onclick="signIn()">Sign In</button>
+      <button onclick="signOutUser()">Sign Out</button>
+      <p id="auth-error" style="color:red;"></p>
     </div>
 
+    <!-- Dark-mode toggle -->
+    <button onclick="toggleDarkMode()" id="dark-toggle">🌓</button>
+
+    <!-- Messages -->
     <div id="chat-box" class="messages"></div>
 
-    <div id="chat-controls" class="message-input">
-      <input type="text" id="message" placeholder="Type your message">
-      <button onclick="sendMessage()" id="sendBtn">Send</button>
+    <!-- Send bar -->
+    <div id="chat-controls">
+      <input type="text" id="chatInput" placeholder="Type your message">
+      <button onclick="handleSendMessage()">Send</button>
     </div>
   </div>
 
