@@ -37,7 +37,7 @@ let   userNickname = "";
 let   socket       = null;
 
 /* ---------- WebSocket endpoint ---------- */
-const WEBSOCKET_URL = "wss://av9x5vcb3l.execute-api.ap-south-1.amazonaws.com/dev/";
+const WEBSOCKET_URL = "wss://av9x5vcb3l.execute-api.ap-south-1.amazonaws.com/dev";
 
 /* ---------- Helper: escape HTML ---------- */
 const escapeHTML = s =>

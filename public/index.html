@@ -19,6 +19,7 @@
   <div class="chat-container">
     <!-- Auth section -->
     <div id="auth-section">
+      <form onsubmit="event.preventDefault(); signIn();"></form>
       <input type="email"    id="email"    placeholder="Email">
       <input type="password" id="password" placeholder="Password">
       <input type="text"     id="nickname" placeholder="Choose Nickname (new users)">
@@ -26,6 +27,7 @@
       <button onclick="signIn()">Sign In</button>
       <button onclick="signOutUser()">Sign Out</button>
       <p id="auth-error" style="color:red;"></p>
+      </form>
     </div>
 
     <!-- Dark-mode toggle -->
