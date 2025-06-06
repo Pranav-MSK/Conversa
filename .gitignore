@@ -67,3 +67,27 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+
+# Ignore all node_modules folders everywhere
+**/node_modules/
+
+# Ignore service account keys and other JSON config files with secrets in lambdas
+lambdas/**/serviceAccountKey*.json
+lambdas/**/*.key.json
+lambdas/**/*.secret.json
+
+# Ignore any .env files in lambdas and project root
+.env
+lambdas/**/.env
+
+# Ignore build/dist folders if you add any build step inside lambdas
+lambdas/**/dist/
+lambdas/**/build/
+
+# Logs inside lambdas
+lambdas/**/*.log
+
+# VS Code settings
+.vscode/
+
