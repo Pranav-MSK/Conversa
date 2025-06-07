@@ -29,15 +29,15 @@ const auth = getAuth();
 const db   = getFirestore();
 
 /* ---------- Global refs ---------- */
-const chatBox      = document.getElementById("chat-box");
-const chatInput    = document.getElementById("chatInput");
-const nicknameInput= document.getElementById("nickname");
-let   currentUser  = null;
-let   userNickname = "";
-let   socket       = null;
+const chatBox       = document.getElementById("chat-box");
+const chatInput     = document.getElementById("chatInput");
+const nicknameInput = document.getElementById("nickname");
+let   currentUser   = null;
+let   userNickname  = "";
+let   socket        = null;
 
-/* ---------- WebSocket endpoint ---------- */
-const WEBSOCKET_URL = "wss://av9x5vcb3l.execute-api.ap-south-1.amazonaws.com/dev";
+/* ---------- WebSocket endpoint base ---------- */
+const WS_BASE = "wss://av9x5vcb3l.execute-api.ap-south-1.amazonaws.com/dev";
 
 /* ---------- Helper: escape HTML ---------- */
 const escapeHTML = s =>
@@ -91,57 +91,39 @@ onAuthStateChanged(auth, async user => {
     await setDoc(doc(db, "users", user.uid), { nickname: userNickname });
   }
 
-  initWebSocket();      // 🔗 connect once authenticated
+  await initWebSocket();      // 🔗 connect once authenticated
 });
 
 /* ======================================================================
    2.  WEBSOCKET HANDLING
    ====================================================================== */
-function initWebSocket() {
+async function initWebSocket() {
   if (socket && socket.readyState === WebSocket.OPEN) return;   // already open
 
-  socket = new WebSocket(WEBSOCKET_URL);
+  const token = await auth.currentUser.getIdToken(/* forceRefresh */ true);
+  const wsURL = `${WS_BASE}?token=${encodeURIComponent(token)}&nickname=${encodeURIComponent(userNickname)}`;
 
-  socket.onopen = () => {
-    console.log("✅ WebSocket connected");
-    /* Optionally register uid so back-end can map userId → connectionId */
-    socket.send(JSON.stringify({
-      action : "register",
-      userId : currentUser.uid            // Lambda $connect can store this
-    }));
-  };
+  socket = new WebSocket(wsURL);
+
+  socket.onopen = () => console.log("✅ WebSocket connected");
 
   socket.onmessage = evt => {
-    const { message, from } = JSON.parse(evt.data);
-    displayIncomingMessage(message, from);
+    const { text, from } = JSON.parse(evt.data);   // NOTE: expects {text, from}
+    displayIncomingMessage(text, from);
   };
 
   socket.onclose = () => console.warn("❌ WebSocket closed");
-  socket.onerror = err => console.error("⚠️ WebSocket error", err);
+  socket.onerror = err  => console.error("⚠️ WebSocket error", err);
 }
 
 /* ======================================================================
    3.  SENDING & RECEIVING MESSAGES
    ====================================================================== */
-function getRecipientUserId() {
-  /* 👉 For demo, echo to yourself.
-     ── Replace with logic (dropdown, chat room, etc.) that returns the
-        Firebase uid of the person you’re chatting with. */
-  return currentUser.uid;
-}
-
 window.handleSendMessage = () => {
   const text = chatInput.value.trim();
-  const targetUserId = getRecipientUserId();
-
   if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
 
-  socket.send(JSON.stringify({
-    action       : "sendMessage",
-    targetUserId,
-    message      : text
-  }));
-
+  socket.send(JSON.stringify({ action: "sendMessage", message: text }));
   displayOutgoingMessage(text);
   chatInput.value = "";
 };

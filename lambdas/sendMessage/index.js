@@ -1,79 +1,71 @@
-import { DynamoDBClient, ScanCommand, DeleteItemCommand } from "@aws-sdk/client-dynamodb";
+import { db } from "../shared/firebaseAdmin.js";
+import {
+  DynamoDBClient,
+  ScanCommand,
+  DeleteItemCommand
+} from "@aws-sdk/client-dynamodb";
 import {
   ApiGatewayManagementApiClient,
   PostToConnectionCommand
 } from "@aws-sdk/client-apigatewaymanagementapi";
-import admin from "firebase-admin";
-import fs from "fs";
 
-// Initialize Firebase Admin SDK (only once)
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(fs.readFileSync("./serviceAccountKey.json", "utf8"));
-
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
-
-const firestore = admin.firestore();
 const ddb = new DynamoDBClient({});
 
 export const handler = async (event) => {
-  const { domainName, stage, connectionId: sender } = event.requestContext;
+  const { domainName, stage, connectionId: senderConnId } =
+    event.requestContext;
   const api = new ApiGatewayManagementApiClient({
     endpoint: `https://${domainName}/${stage}`
   });
 
   const body = JSON.parse(event.body || "{}");
-  const messageText = body.data || body.message || "";
-  const userId = body.targetUserId || "unknown";
+  const text = body.data || body.message || "";
 
-  const timestamp = new Date().toISOString();
-  const msg = {
-    from: sender,
-    message: messageText,
-    timestamp
-  };
+  /* ─── Who sent this? ─── */
+  const snap = await db.collection("connections")
+                       .where("connectionId", "==", senderConnId)
+                       .limit(1)
+                       .get();
 
-  // 🔥 Store message in Firestore
-  await firestore.collection("messages").add({
-    from: sender,
-    message: messageText,
-    userId,
-    timestamp
-  });
+  const senderId   = snap.empty ? "unknown"  : snap.docs[0].id;
+  const senderNick = snap.empty ? "Anonymous":
+                     (snap.docs[0].data().nickname || "Anonymous");
 
-  // Broadcast to all except sender
-  const { Items } = await ddb.send(new ScanCommand({
+  /* ─── Persist chat message ─── */
+  const msg = { senderId, senderNick, text, timestamp: Date.now() };
+  await db.collection("messages").add(msg);
+
+  /* ─── Broadcast to everyone else ─── */
+  const scanOut = await ddb.send(new ScanCommand({
     TableName: process.env.CONNECTIONS_TABLE,
     ProjectionExpression: "connectionId"
   }));
+  const conns = scanOut.Items ?? [];
 
-  const posts = Items.map(async (item) => {
-    const targetId = item.connectionId.S;
-    if (targetId === sender) return;
+  const tasks = conns.map(async ({ connectionId: { S: targetId } }) => {
+    if (targetId === senderConnId) return;
 
     try {
       await api.send(new PostToConnectionCommand({
         ConnectionId: targetId,
-        Data: JSON.stringify(msg)
+        Data: JSON.stringify({ from: senderNick, text: msg.text, ts: msg.timestamp })
       }));
     } catch (err) {
-      if (err.$metadata?.httpStatusCode === 410) {
+      if (err.name === "GoneException" || err.$metadata?.httpStatusCode === 410) {
+        /* stale socket → clean DynamoDB & Firestore */
         await ddb.send(new DeleteItemCommand({
           TableName: process.env.CONNECTIONS_TABLE,
           Key: { connectionId: { S: targetId } }
         }));
+        const q = await db.collection("connections")
+                          .where("connectionId", "==", targetId).get();
+        q.forEach(doc => doc.ref.delete());
       } else {
-        console.error("Failed to post", err);
+        console.error("PostToConnection failed:", err);
       }
     }
   });
 
-  await Promise.all(posts);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ success: true, message: "Message sent and stored" })
-  };
+  await Promise.allSettled(tasks);
+  return { statusCode: 200, body: "Sent & stored" };
 };

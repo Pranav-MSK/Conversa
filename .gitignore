@@ -76,6 +76,7 @@ node_modules/
 lambdas/**/serviceAccountKey*.json
 lambdas/**/*.key.json
 lambdas/**/*.secret.json
+*serviceAccountKey*.json
 
 # Ignore any .env files in lambdas and project root
 .env
