@@ -92,3 +92,5 @@ lambdas/**/*.log
 # VS Code settings
 .vscode/
 
+#zip files 
+*.zip
