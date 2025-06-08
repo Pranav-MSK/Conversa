@@ -40,9 +40,18 @@ let   socket        = null;
 const WS_BASE = "wss://av9x5vcb3l.execute-api.ap-south-1.amazonaws.com/dev";
 
 /* ---------- Helper: escape HTML ---------- */
-const escapeHTML = s =>
-  s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
-   .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const escapeHTML = s => {
+  if (s === undefined || s === null) {
+    console.warn("escapeHTML received undefined or null:", s);
+    s = '';
+  }
+  return s.toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+};
+
 
 /* ======================================================================
    1.  AUTH FLOW (Firebase)
@@ -140,12 +149,18 @@ function displayOutgoingMessage(msg) {
 }
 
 function displayIncomingMessage(msg, from) {
+  console.log('displayIncomingMessage called with:', { msg, from });
+
+  msg = msg ?? "";
+  from = from ?? "";
+
   const div = document.createElement("div");
   div.className = "message-row incoming";
   div.innerHTML = `<div class="message"><b>${escapeHTML(from)}</b>:<br>${escapeHTML(msg)}</div>`;
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
+
 
 /* ======================================================================
    5.  MISC (dark-mode)
